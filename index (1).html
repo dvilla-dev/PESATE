@@ -1,0 +1,173 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12161B"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+<title>Peso</title>
+<style>
+:root{--bg:#F2F4F7;--fg:#14181F;--mut:#6B7380;--card:#fff;--ac:#2F5BEA;--ok:#1E8E5A;--ko:#C23B3B;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#12161B;--fg:#EEF1F5;--mut:#8D96A5;--card:#1B2128;--ac:#6C8CFF;--ok:#4CC38A;--ko:#FF7A7A}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,system-ui,sans-serif;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+main{flex:1;overflow:auto;padding:20px 22px}
+.tab{display:none}.tab.on{display:block}
+.top{display:flex;justify-content:space-between;align-items:center}
+.date{font-size:15px;color:var(--mut);text-transform:capitalize}
+.day{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:2px 0 0;text-transform:capitalize}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.gear{font-size:22px;color:var(--mut);padding:6px}
+.pick{display:flex;align-items:center;justify-content:center;gap:10px;margin:9vh 0 4vh}
+.step{width:56px;height:56px;border-radius:50%;background:var(--card);font-size:28px}
+.kg{display:flex;align-items:baseline;justify-content:center}
+#w{width:4.4ch;font-size:84px;font-weight:700;letter-spacing:-.04em;text-align:center;background:none;border:0;color:var(--fg);font-variant-numeric:tabular-nums;padding:0;outline:0}
+#w:focus{color:var(--ac)}
+.u{font-size:24px;color:var(--mut);margin-left:2px}
+.dial{position:relative;width:min(78vw,300px);margin:4vh auto 3vh;touch-action:none;user-select:none;-webkit-user-select:none}.dial svg{display:block;width:100%;height:auto;overflow:visible}.trk{stroke:color-mix(in srgb,var(--mut) 25%,transparent)}.ctr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;padding-bottom:6%}.ctr input{pointer-events:auto}.ctr #w{font-size:60px}.dm,.dp{position:absolute;bottom:3%;width:48px;height:48px;font-size:26px}.dm{left:24%}.dp{right:24%}
+.days{display:flex;gap:5px;margin-top:14px}.dy{flex:1;min-width:0;padding:7px 0 8px;border-radius:12px;background:var(--card);text-align:center;font-size:11px;color:var(--mut);position:relative}.dy b{display:block;font-size:15px;color:var(--fg);font-weight:600}.dy.on{background:var(--ac);color:#fff}.dy.on b{color:#fff}.dy.has::after{content:'';position:absolute;bottom:3px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--ac)}.dy.on.has::after{background:#fff}
+.save{display:block;width:100%;padding:18px;border-radius:16px;background:var(--ac);color:#fff;font-size:18px;font-weight:600}
+.save:active{opacity:.85}
+.hint{text-align:center;color:var(--mut);margin-top:14px;min-height:22px}
+nav{display:flex;border-top:1px solid color-mix(in srgb,var(--mut) 25%,transparent);padding-bottom:env(safe-area-inset-bottom);background:var(--bg)}
+nav button{flex:1;padding:14px 0;color:var(--mut);font-weight:600}
+nav button.on{color:var(--ac)}
+h2{font-size:22px;margin:0 0 14px}
+.row{display:flex;justify-content:space-between;align-items:center;background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.row small{color:var(--mut);display:block}
+.avg{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.pct{font-size:14px;font-weight:600;text-align:right}
+.wk{background:var(--card);border-radius:14px;padding:14px 12px 12px;margin-bottom:10px}.wh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px}.wh>b{font-size:14px}.wh .avg{font-size:24px;font-weight:700;line-height:1.1;text-align:right}.wh small{font-size:14px;color:var(--mut);font-weight:400}.wk .pct{font-size:13px;font-weight:400;color:var(--mut);margin-top:2px;text-align:right}.dg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;align-items:end;text-align:center}.dc{display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end}.dc i{display:block}.dv{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}.dv.e{color:var(--mut);font-weight:400}.bar{width:100%;border-radius:4px;background:color-mix(in srgb,var(--mut) 45%,transparent)}.dl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;margin-top:6px;font-size:11px;color:var(--mut)}.up{color:var(--ko)}.dn{color:var(--ok)}.eq{color:var(--mut)}
+.rng{display:flex;gap:6px;margin-bottom:14px}
+.rng button{flex:1;padding:9px 0;border-radius:10px;background:var(--card);color:var(--mut);font-weight:600}
+.rng button.on{background:var(--ac);color:#fff}
+svg{width:100%;height:auto;background:var(--card);border-radius:16px}
+.sum{display:flex;justify-content:space-between;margin-top:12px;color:var(--mut)}
+dialog{border:0;border-radius:20px;background:var(--card);color:var(--fg);width:min(92vw,420px);padding:22px}
+dialog::backdrop{background:#0008}
+dialog label{display:block;margin:12px 0 4px;color:var(--mut);font-size:14px}
+dialog input{width:100%;padding:12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--mut) 35%,transparent);background:var(--bg);color:var(--fg);font:inherit}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;background:var(--bg);margin-top:10px;font-weight:600}
+.btn.p{background:var(--ac);color:#fff}
+.empty{color:var(--mut);text-align:center;margin-top:12vh}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<main>
+<section class="tab on" id="t-oggi">
+ <div class="top"><div><div class="date" id="dow"></div><h1 class="day" id="dm"></h1></div><button class="gear" id="gear" aria-label="Impostazioni">⚙︎</button></div>
+ <div class="days" id="days"></div>
+ <div class="dial" id="dial"><svg viewBox="0 0 260 260" aria-hidden="true"><g transform="rotate(135 130 130)" fill="none" stroke-linecap="round" stroke-width="14"><circle cx="130" cy="130" r="108" class="trk" stroke-dasharray="508.9 678.6"/><circle id="prog" cx="130" cy="130" r="108" stroke="var(--ac)" stroke-dasharray="0 678.6"/></g><circle id="knob" r="15" cx="130" cy="130" fill="var(--ac)" stroke="var(--bg)" stroke-width="4"/></svg>
+  <div class="ctr"><div class="kg"><input id="w" inputmode="decimal" aria-label="Peso in kg"><span class="u">kg</span></div></div>
+  <button class="step dm" id="m" aria-label="Meno 0,1">−</button><button class="step dp" id="p" aria-label="Più 0,1">+</button></div>
+ <button class="save" id="save">Salva pesata</button>
+ <div class="hint" id="hint"></div>
+</section>
+<section class="tab" id="t-storico"><h2>Storico</h2><div id="list"></div></section>
+<section class="tab" id="t-grafico"><h2>Andamento</h2>
+ <div class="rng" id="rng"><button data-d="7">Sett.</button><button data-d="30" class="on">Mese</button><button data-d="90">3 mesi</button><button data-d="365">Anno</button><button data-d="0">Tutto</button></div>
+ <div id="chart"></div></section>
+</main>
+<nav id="nav"><button data-t="oggi" class="on">Oggi</button><button data-t="storico">Storico</button><button data-t="grafico">Grafico</button></nav>
+<dialog id="dlg"><h2>Impostazioni</h2>
+ <label>Token GitHub (solo permesso gist)</label><input id="tok" type="password" autocapitalize="off">
+ <button class="btn p" id="ssave">Salva impostazioni</button>
+ <button class="btn" id="xls">Esporta in Excel</button>
+ <button class="btn" id="rest">Ripristina da GitHub</button>
+ <button class="btn" id="close">Chiudi</button></dialog>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),K='pesate-v1',C='pesate-cfg';
+let data=JSON.parse(localStorage.getItem(K)||'{}'),cfg=JSON.parse(localStorage.getItem(C)||'{}'),days=30;
+const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const today=iso(new Date()),fmt=n=>n.toFixed(1).replace('.',','),ds=()=>Object.keys(data).sort();
+const it=(s,o)=>new Date(s+'T12:00:00').toLocaleDateString('it-IT',o);
+function mon(s){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return iso(d)}
+function weeks(){const m={};ds().forEach(d=>(m[mon(d)]??=[]).push([d,data[d]]));let pr=null;
+ return Object.keys(m).sort().map(k=>{const a=m[k].reduce((x,y)=>x+y[1],0)/m[k].length,o={k,a,n:m[k].length,days:m[k],pct:pr==null?null:(a-pr)/pr*100};pr=a;return o}).reverse()}
+let w=data[today]??(ds().length?data[ds().pop()]:75);
+let base=Math.round(w);
+const R=108,CX=130,CY=130,CC=2*Math.PI*R;
+function dial(){if(w<base-5||w>base+5)base=Math.round(w);const f=(w-(base-5))/10,a=(-135+f*270)*Math.PI/180;
+ $('#prog').setAttribute('stroke-dasharray',f*.75*CC+' '+CC);$('#knob').setAttribute('cx',CX+R*Math.sin(a));$('#knob').setAttribute('cy',CY-R*Math.cos(a))}
+const show=()=>{$('#w').value=fmt(w);dial()};
+const save=()=>localStorage.setItem(K,JSON.stringify(data));
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2600)};
+let sel=today;
+function head(){$('#dow').textContent=it(sel,{weekday:'long'});$('#dm').textContent=it(sel,{day:'numeric',month:'long'});
+ $('#days').innerHTML=[...Array(8)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-(7-i));const k=iso(d);return `<button class="dy${k==sel?' on':''}${data[k]!=null?' has':''}" data-d="${k}">${i==7?'oggi':it(k,{weekday:'short'}).replace('.','')}<b>${d.getDate()}</b></button>`}).join('')}
+$('#days').onclick=e=>{const b=e.target.closest('.dy');if(!b)return;sel=b.dataset.d;w=data[sel]??w;show();hint();head()};
+const set=v=>{w=Math.round(Math.min(300,Math.max(20,v))*10)/10;show()};
+$('#m').onclick=()=>set(w-.1);$('#p').onclick=()=>set(w+.1);
+$('#w').onchange=e=>{const v=parseFloat(e.target.value.replace(',','.'));isNaN(v)?show():set(v)};
+$('#w').onfocus=e=>e.target.select();
+const dl=$('#dial');let drag=false;
+function pt(e){const r=dl.getBoundingClientRect();let t=Math.atan2(e.clientX-(r.left+r.width/2),-(e.clientY-(r.top+r.height/2)))*180/Math.PI;t=Math.max(-135,Math.min(135,t));set(base-5+(t+135)/270*10)}
+dl.addEventListener('pointerdown',e=>{if(e.target.closest('button,input'))return;const r=dl.getBoundingClientRect();if(Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))/(r.width/2)<.5)return;drag=true;dl.setPointerCapture(e.pointerId);pt(e)});
+dl.addEventListener('pointermove',e=>{if(drag)pt(e)});
+['pointerup','pointercancel'].forEach(n=>dl.addEventListener(n,()=>drag=false));
+$('#save').onclick=async()=>{$('#w').blur();data[sel]=w;save();hint();render();head();toast(sel==today?'Pesata salvata':'Pesata del '+it(sel,{day:'numeric',month:'short'})+' salvata');await backup()};
+function hint(){const n=ds();$('#hint').textContent=data[sel]!=null?`${sel==today?'Oggi':'Registrata'}: ${fmt(data[sel])} kg`:''}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#nav button,.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#t-'+b.dataset.t).classList.add('on');render()});
+document.querySelectorAll('#rng button').forEach(b=>b.onclick=()=>{days=+b.dataset.d;document.querySelectorAll('#rng button').forEach(x=>x.classList.toggle('on',x===b));chart()});
+function list(){const W=weeks();if(!W.length){$('#list').innerHTML='<p class="empty">Nessuna pesata ancora.</p>';return}
+ const v=ds().map(d=>data[d]),mn=Math.min(...v)-.2,mx=Math.max(...v)+.2,Hh=x=>Math.round(6+(x-mn)/((mx-mn)||1)*40),I=['L','M','M','G','V','S','D'],sh={day:'numeric',month:'short'};
+ $('#list').innerHTML=W.map(x=>{const a=new Date(x.k+'T12:00:00'),b=new Date(a);b.setDate(a.getDate()+6);
+  const rg=a.getMonth()==b.getMonth()?a.getDate()+'–'+it(iso(b),sh):it(x.k,sh)+'–'+it(iso(b),sh),
+  p=x.pct,t=p==null?'':(p>0?'+':'−')+Math.abs(p).toFixed(1).replace('.',',')+'%',
+  cols=[...Array(7)].map((_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);const y=data[iso(d)];
+   return y==null?'<div class="dc"><span class="dv e">–</span><i style="height:6px"></i></div>':`<div class="dc"><span class="dv">${fmt(y)}</span><i class="bar" style="height:${Hh(y)}px"></i></div>`}).join('');
+  return `<div class="wk"><div class="wh"><b>${rg}</b><div><div class="avg">${fmt(x.a)} <small>kg</small></div><div class="pct">${t}</div></div></div><div class="dg">${cols}</div><div class="dl">${I.map(c=>`<span>${c}</span>`).join('')}</div></div>`}).join('')}
+function chart(){const lim=days?iso(new Date(Date.now()-days*864e5)):'',P=ds().filter(d=>d>=lim).map(d=>[d,data[d]]);
+ if(P.length<2){$('#chart').innerHTML='<p class="empty">Servono almeno 2 pesate in questo periodo.</p>';return}
+ const W=340,H=210,pl=14,pr=14,pt=16,pb=16,v=P.map(p=>p[1]),mn=Math.min(...v)-.3,mx=Math.max(...v)+.3,t0=+new Date(P[0][0]),t1=+new Date(P.at(-1)[0]);
+ const X=d=>pl+(t1==t0?0:(+new Date(d)-t0)/(t1-t0))*(W-pl-pr),Y=y=>pt+(mx-y)/(mx-mn)*(H-pt-pb);
+ const pts=P.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ');
+ $('#chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}"><polyline points="${pts}" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${P.length<60?P.map(p=>`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3" fill="var(--ac)"/>`).join(''):''}</svg>
+ <div class="sum"><span>Min ${fmt(Math.min(...v))}</span><span>Ultimo ${fmt(v.at(-1))}</span><span>Max ${fmt(Math.max(...v))}</span></div>
+ <div class="sum"><span>${it(P[0][0],{day:'numeric',month:'short',year:'2-digit'})}</span><span>${(v.at(-1)-v[0]>0?'+':'')+(v.at(-1)-v[0]).toFixed(1).replace('.',',')} kg</span><span>${it(P.at(-1)[0],{day:'numeric',month:'short',year:'2-digit'})}</span></div>`}
+const render=()=>{list();chart()};
+const gh=(p,o={})=>fetch('https://api.github.com'+p,{...o,headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
+async function backup(){if(!cfg.token)return;try{const c=JSON.stringify(data,null,1);
+ const r=cfg.gist?await gh('/gists/'+cfg.gist,{method:'PATCH',body:JSON.stringify({files:{'pesate.json':{content:c}}})}):await gh('/gists',{method:'POST',body:JSON.stringify({description:'Pesate',public:false,files:{'pesate.json':{content:c}}})});
+ if(r.ok&&!cfg.gist){cfg.gist=(await r.json()).id;localStorage.setItem(C,JSON.stringify(cfg))}
+ toast(r.ok?'Backup su GitHub fatto':'Backup fallito ('+r.status+'). Controlla il token')}catch{toast('Backup non riuscito. Sei offline?')}}
+$('#gear').onclick=()=>{$('#tok').value=cfg.token||'';$('#dlg').showModal()};
+$('#close').onclick=()=>$('#dlg').close();
+$('#ssave').onclick=()=>{cfg.token=$('#tok').value.trim();localStorage.setItem(C,JSON.stringify(cfg));$('#dlg').close();toast('Impostazioni salvate')};
+$('#rest').onclick=async()=>{try{if(!cfg.gist){const l=await(await gh('/gists?per_page=100')).json(),g=l.find(x=>x.files&&x.files['pesate.json']);if(!g)throw 0;cfg.gist=g.id;localStorage.setItem(C,JSON.stringify(cfg))}
+ const j=await(await gh('/gists/'+cfg.gist)).json();data={...data,...JSON.parse(j.files['pesate.json'].content)};save();render();$('#dlg').close();toast('Dati ripristinati')}catch{toast('Ripristino non riuscito')}};
+async function buildXlsx(X,Z,data,weeksList){
+ const ser=s=>Math.round(Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/864e5)+25569,K=Object.keys(data).sort(),n=K.length+1;
+ const A=[['Data','Peso (kg)'],...K.map(d=>[ser(d),data[d]])];
+ const ws=X.utils.aoa_to_sheet(A);ws['!cols']=[{wch:12},{wch:11}];
+ K.forEach((d,i)=>{ws['A'+(i+2)].z='dd/mm/yyyy';ws['B'+(i+2)].z='0.0'});
+ const B=[['Settimana dal','Media (kg)','Pesate','Var. % vs sett. prec.'],...weeksList.map(x=>[ser(x.k),+x.a.toFixed(2),x.n,x.pct==null?'':+x.pct.toFixed(2)])];
+ const w2=X.utils.aoa_to_sheet(B);w2['!cols']=[{wch:14},{wch:11},{wch:8},{wch:20}];
+ weeksList.forEach((x,i)=>{w2['A'+(i+2)].z='dd/mm/yyyy'});
+ const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'Pesate');X.utils.book_append_sheet(wb,w2,'Medie settimanali');
+ const z=await Z.loadAsync(X.write(wb,{type:'array',bookType:'xlsx'}));
+ const NS='xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+ const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+ z.file('xl/charts/chart1.xml',H+`<c:chartSpace ${NS}><c:roundedCorners val="0"/><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:p><a:r><a:rPr lang="it-IT" sz="1400" b="0"/><a:t>Andamento del peso (kg)</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/><c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/><c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:strRef><c:f>Pesate!$B$1</c:f></c:strRef></c:tx><c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="2F5BEA"/></a:solidFill><a:round/></a:ln></c:spPr><c:marker><c:symbol val="none"/></c:marker><c:cat><c:numRef><c:f>Pesate!$A$2:$A$${n}</c:f></c:numRef></c:cat><c:val><c:numRef><c:f>Pesate!$B$2:$B$${n}</c:f></c:numRef></c:val><c:smooth val="0"/></c:ser><c:marker val="1"/><c:axId val="111"/><c:axId val="222"/></c:lineChart><c:dateAx><c:axId val="111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="dd/mm/yy" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:crossAx val="222"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblOffset val="100"/><c:baseTimeUnit val="days"/></c:dateAx><c:valAx><c:axId val="222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:numFmt formatCode="0.0" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:crossAx val="111"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx></c:plotArea><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>`);
+ z.file('xl/drawings/drawing1.xml',H+`<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>3</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>14</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>24</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Grafico peso"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`);
+ const R='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+ z.file('xl/drawings/_rels/drawing1.xml.rels',H+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${R}/chart" Target="../charts/chart1.xml"/></Relationships>`);
+ z.file('xl/worksheets/_rels/sheet1.xml.rels',H+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${R}/drawing" Target="../drawings/drawing1.xml"/></Relationships>`);
+ let ct=await z.file('[Content_Types].xml').async('string');
+ ct=ct.replace('</Types>','<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/></Types>');
+ z.file('[Content_Types].xml',ct);
+ let s=await z.file('xl/worksheets/sheet1.xml').async('string');
+ if(!/xmlns:r=/.test(s))s=s.replace('<worksheet ','<worksheet xmlns:r="'+R+'" ');
+ s=s.replace('</worksheet>','<drawing r:id="rId1"/></worksheet>');
+ z.file('xl/worksheets/sheet1.xml',s);
+ return z.generateAsync({type:'uint8array',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+$('#xls').onclick=async()=>{if(!window.XLSX||!window.JSZip)return toast('Librerie non caricate, riprova online');
+ try{const u=await buildXlsx(XLSX,JSZip,data,weeks().reverse()),nm='pesate-'+today+'.xlsx',f=new File([u],nm,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]})}else{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=nm;a.click()}}catch(e){if(e.name!=='AbortError')toast('Export non riuscito')}};
+show();hint();render();head();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
