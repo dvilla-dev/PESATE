@@ -68,8 +68,7 @@ dialog input{width:100%;padding:12px;border-radius:10px;border:1px solid color-m
 </main>
 <nav id="nav"><button data-t="oggi" class="on">Oggi</button><button data-t="storico">Storico</button><button data-t="grafico">Grafico</button></nav>
 <dialog id="dlg"><h2>Impostazioni</h2>
- <label>Repo GitHub privato (utente/repo)</label><input id="repo" autocapitalize="off" placeholder="davide/pesate-dati">
- <label>Token GitHub (permesso Contents: lettura e scrittura)</label><input id="tok" type="password" autocapitalize="off">
+ <label>Token GitHub (solo permesso gist)</label><input id="tok" type="password" autocapitalize="off">
  <button class="btn p" id="ssave">Salva impostazioni</button>
  <button class="btn" id="xls">Esporta in Excel</button>
  <button class="btn" id="rest">Ripristina da GitHub</button>
@@ -124,15 +123,16 @@ function chart(){const lim=days?iso(new Date(Date.now()-days*864e5)):'',P=ds().f
  <div class="sum"><span>Min ${fmt(Math.min(...v))}</span><span>Ultimo ${fmt(v.at(-1))}</span><span>Max ${fmt(Math.max(...v))}</span></div>
  <div class="sum"><span>${it(P[0][0],{day:'numeric',month:'short',year:'2-digit'})}</span><span>${(v.at(-1)-v[0]>0?'+':'')+(v.at(-1)-v[0]).toFixed(1).replace('.',',')} kg</span><span>${it(P.at(-1)[0],{day:'numeric',month:'short',year:'2-digit'})}</span></div>`}
 const render=()=>{list();chart()};
-const gh=(o={})=>fetch(`https://api.github.com/repos/${cfg.repo}/contents/pesate.json`,{...o,headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
-async function backup(){if(!cfg.token||!cfg.repo)return;try{const g=await gh();const sha=g.ok?(await g.json()).sha:undefined;
- const r=await gh({method:'PUT',body:JSON.stringify({message:'Pesata '+today,sha,content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,1))))})});
- toast(r.ok?'Backup su GitHub fatto':'Backup fallito ('+r.status+'). Controlla repo e token')}catch{toast('Backup non riuscito. Sei offline?')}}
-$('#gear').onclick=()=>{$('#repo').value=cfg.repo||'';$('#tok').value=cfg.token||'';$('#dlg').showModal()};
+const gh=(p,o={})=>fetch('https://api.github.com'+p,{...o,headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
+async function backup(){if(!cfg.token)return;try{const c=JSON.stringify(data,null,1);
+ const r=cfg.gist?await gh('/gists/'+cfg.gist,{method:'PATCH',body:JSON.stringify({files:{'pesate.json':{content:c}}})}):await gh('/gists',{method:'POST',body:JSON.stringify({description:'Pesate',public:false,files:{'pesate.json':{content:c}}})});
+ if(r.ok&&!cfg.gist){cfg.gist=(await r.json()).id;localStorage.setItem(C,JSON.stringify(cfg))}
+ toast(r.ok?'Backup su GitHub fatto':'Backup fallito ('+r.status+'). Controlla il token')}catch{toast('Backup non riuscito. Sei offline?')}}
+$('#gear').onclick=()=>{$('#tok').value=cfg.token||'';$('#dlg').showModal()};
 $('#close').onclick=()=>$('#dlg').close();
-$('#ssave').onclick=()=>{cfg={repo:$('#repo').value.trim(),token:$('#tok').value.trim()};localStorage.setItem(C,JSON.stringify(cfg));$('#dlg').close();toast('Impostazioni salvate')};
-$('#rest').onclick=async()=>{try{const g=await gh();if(!g.ok)throw 0;const j=await g.json(),r=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
- data={...data,...r};save();render();$('#dlg').close();toast('Dati ripristinati')}catch{toast('Ripristino non riuscito')}};
+$('#ssave').onclick=()=>{cfg.token=$('#tok').value.trim();localStorage.setItem(C,JSON.stringify(cfg));$('#dlg').close();toast('Impostazioni salvate')};
+$('#rest').onclick=async()=>{try{if(!cfg.gist){const l=await(await gh('/gists?per_page=100')).json(),g=l.find(x=>x.files&&x.files['pesate.json']);if(!g)throw 0;cfg.gist=g.id;localStorage.setItem(C,JSON.stringify(cfg))}
+ const j=await(await gh('/gists/'+cfg.gist)).json();data={...data,...JSON.parse(j.files['pesate.json'].content)};save();render();$('#dlg').close();toast('Dati ripristinati')}catch{toast('Ripristino non riuscito')}};
 $('#xls').onclick=()=>{if(!window.XLSX)return toast('Libreria Excel non caricata, riprova online');
  const A=ds().map(d=>({Data:d,'Peso (kg)':data[d]})),B=weeks().reverse().map(x=>({'Settimana dal':x.k,'Media (kg)':+x.a.toFixed(2),Pesate:x.n,'Var. % vs sett. prec.':x.pct==null?'':+x.pct.toFixed(2)}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(A),'Pesate');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(B),'Medie settimanali');XLSX.writeFile(wb,'pesate-'+today+'.xlsx')};
