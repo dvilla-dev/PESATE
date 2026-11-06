@@ -72,6 +72,9 @@ dialog input{width:100%;padding:12px;border-radius:10px;border:1px solid color-m
 <nav id="nav"><button data-t="oggi" class="on">Oggi</button><button data-t="storico">Storico</button><button data-t="grafico">Grafico</button></nav>
 <dialog id="dlg"><h2>Impostazioni</h2>
  <label>Token GitHub (solo permesso gist)</label><input id="tok" type="password" autocapitalize="off">
+ <label>Indirizzo notifiche (Worker Cloudflare)</label><input id="wk" autocapitalize="off" placeholder="https://pesate-notifiche.nome.workers.dev">
+ <button class="btn" id="notif">Attiva notifica delle 7</button>
+ <button class="btn" id="ntest">Invia notifica di prova</button>
  <button class="btn p" id="ssave">Salva impostazioni</button>
  <button class="btn" id="xls">Esporta in Excel</button>
  <button class="btn" id="rest">Ripristina da GitHub</button>
@@ -134,9 +137,9 @@ async function backup(){if(!cfg.token)return;try{const c=JSON.stringify(data,nul
  const r=cfg.gist?await gh('/gists/'+cfg.gist,{method:'PATCH',body:JSON.stringify({files:{'pesate.json':{content:c}}})}):await gh('/gists',{method:'POST',body:JSON.stringify({description:'Pesate',public:false,files:{'pesate.json':{content:c}}})});
  if(r.ok&&!cfg.gist){cfg.gist=(await r.json()).id;localStorage.setItem(C,JSON.stringify(cfg))}
  toast(r.ok?'Backup su GitHub fatto':'Backup fallito ('+r.status+'). Controlla il token')}catch{toast('Backup non riuscito. Sei offline?')}}
-$('#gear').onclick=()=>{$('#tok').value=cfg.token||'';$('#dlg').showModal()};
+$('#gear').onclick=()=>{$('#tok').value=cfg.token||'';$('#wk').value=cfg.wk||'';$('#dlg').showModal()};
 $('#close').onclick=()=>$('#dlg').close();
-$('#ssave').onclick=()=>{cfg.token=$('#tok').value.trim();localStorage.setItem(C,JSON.stringify(cfg));$('#dlg').close();toast('Impostazioni salvate')};
+$('#ssave').onclick=()=>{cfg.token=$('#tok').value.trim();cfg.wk=$('#wk').value.trim().replace(/\/$/,'');localStorage.setItem(C,JSON.stringify(cfg));$('#dlg').close();toast('Impostazioni salvate')};
 $('#rest').onclick=async()=>{try{if(!cfg.gist){const l=await(await gh('/gists?per_page=100')).json(),g=l.find(x=>x.files&&x.files['pesate.json']);if(!g)throw 0;cfg.gist=g.id;localStorage.setItem(C,JSON.stringify(cfg))}
  const j=await(await gh('/gists/'+cfg.gist)).json();data={...data,...JSON.parse(j.files['pesate.json'].content)};save();render();$('#dlg').close();toast('Dati ripristinati')}catch{toast('Ripristino non riuscito')}};
 async function buildXlsx(X,Z,data,weeksList){
@@ -168,6 +171,14 @@ async function buildXlsx(X,Z,data,weeksList){
 $('#xls').onclick=async()=>{if(!window.XLSX||!window.JSZip)return toast('Librerie non caricate, riprova online');
  try{const u=await buildXlsx(XLSX,JSZip,data,weeks().reverse()),nm='pesate-'+today+'.xlsx',f=new File([u],nm,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]})}else{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=nm;a.click()}}catch(e){if(e.name!=='AbortError')toast('Export non riuscito')}};
+const b64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+$('#notif').onclick=async()=>{try{const u=$('#wk').value.trim().replace(/\/$/,'');if(!u)return toast('Inserisci l\u2019indirizzo del Worker');
+ if(!('PushManager' in window))return toast('Apri l\u2019app dall\u2019icona sulla Home, poi riprova');
+ if(await Notification.requestPermission()!=='granted')return toast('Notifiche non consentite');
+ const k=await(await fetch(u+'/key')).text(),reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(k)});
+ if(!(await fetch(u+'/subscribe',{method:'POST',body:JSON.stringify(sub)})).ok)throw 0;
+ cfg.wk=u;localStorage.setItem(C,JSON.stringify(cfg));toast('Notifica delle 7 attivata')}catch{toast('Attivazione non riuscita')}};
+$('#ntest').onclick=async()=>{try{const u=($('#wk').value.trim()||cfg.wk||'').replace(/\/$/,'');const r=await(await fetch(u+'/test')).json();toast(r.length?'Notifica inviata ('+r.join(',')+')':'Nessun dispositivo registrato')}catch{toast('Prova non riuscita')}};
 show();hint();render();head();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>
